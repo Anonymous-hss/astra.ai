@@ -1,18 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChatModal } from "@/components/dashboard/chat-modal"
-import { PaymentModal } from "@/components/dashboard/payment-modal"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ChatModal } from "@/components/dashboard/chat-modal";
+import { PaymentModal } from "@/components/dashboard/payment-modal";
+import { useToast } from "@/hooks/use-toast";
 
 const birthDetailsSchema = z.object({
   name: z.string().min(2, {
@@ -30,15 +50,43 @@ const birthDetailsSchema = z.object({
   gender: z.string().min(1, {
     message: "Gender is required.",
   }),
-})
+});
 
 export default function KundliPage() {
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState("birth-details")
-  const [birthDetailsSubmitted, setBirthDetailsSubmitted] = useState(false)
-  const [isChatModalOpen, setIsChatModalOpen] = useState(false)
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [questionsAsked, setQuestionsAsked] = useState(0)
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("birth-details");
+  const [birthDetailsSubmitted, setBirthDetailsSubmitted] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [questionsRemaining, setQuestionsRemaining] = useState(3);
+  const [isPremium, setIsPremium] = useState(false);
+
+  // Fetch user's module questions status
+  useEffect(() => {
+    async function fetchQuestionsStatus() {
+      try {
+        const response = await fetch("/api/user/questions");
+
+        if (response.ok) {
+          const data = await response.json();
+          const moduleStatus = data.modules?.kundli;
+
+          if (moduleStatus) {
+            setQuestionsRemaining(
+              moduleStatus.questionsRemaining === "unlimited"
+                ? Number.POSITIVE_INFINITY
+                : moduleStatus.questionsRemaining
+            );
+            setIsPremium(moduleStatus.isPremium);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching questions status:", error);
+      }
+    }
+
+    fetchQuestionsStatus();
+  }, []);
 
   const form = useForm<z.infer<typeof birthDetailsSchema>>({
     resolver: zodResolver(birthDetailsSchema),
@@ -49,51 +97,83 @@ export default function KundliPage() {
       placeOfBirth: "",
       gender: "",
     },
-  })
+  });
 
-  function onSubmit(values: z.infer<typeof birthDetailsSchema>) {
-    // In a real app, you would send this data to your backend
-    console.log(values)
-    setBirthDetailsSubmitted(true)
-    setActiveTab("kundli-chart")
-    toast({
-      title: "Birth details saved",
-      description: "Your birth details have been saved successfully.",
-    })
-  }
+  async function onSubmit(values: z.infer<typeof birthDetailsSchema>) {
+    try {
+      // Update user profile with birth details
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          birthDate: values.dateOfBirth,
+          birthTime: values.timeOfBirth,
+          birthPlace: values.placeOfBirth,
+          gender: values.gender,
+        }),
+      });
 
-  const handleAskQuestion = () => {
-    if (questionsAsked >= 3) {
-      setIsPaymentModalOpen(true)
-    } else {
-      setIsChatModalOpen(true)
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to save birth details");
+      }
+
+      setBirthDetailsSubmitted(true);
+      setActiveTab("kundli-chart");
+
+      toast({
+        title: "Birth details saved",
+        description: "Your birth details have been saved successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error saving birth details",
+        description: error.message,
+      });
     }
   }
 
+  const handleAskQuestion = () => {
+    if (questionsRemaining <= 0 && !isPremium) {
+      setIsPaymentModalOpen(true);
+    } else {
+      setIsChatModalOpen(true);
+    }
+  };
+
   const handleQuestionSubmitted = () => {
-    setQuestionsAsked(questionsAsked + 1)
-    setIsChatModalOpen(false)
+    if (!isPremium && questionsRemaining !== Number.POSITIVE_INFINITY) {
+      setQuestionsRemaining((prev) => prev - 1);
+    }
+
+    setIsChatModalOpen(false);
+
     toast({
       title: "Question submitted",
-      description: `You have ${3 - (questionsAsked + 1)} free questions remaining.`,
-    })
-  }
+      description:
+        isPremium || questionsRemaining === Number.POSITIVE_INFINITY
+          ? "You have unlimited questions remaining."
+          : `You have ${questionsRemaining - 1} free questions remaining.`,
+    });
+  };
 
   const handlePaymentSuccess = () => {
-    setIsPaymentModalOpen(false)
-    setIsChatModalOpen(true)
-    toast({
-      title: "Payment successful",
-      description: "You now have unlimited questions for this module.",
-    })
-  }
+    setIsPaymentModalOpen(false);
+    setIsPremium(true);
+    setQuestionsRemaining(Number.POSITIVE_INFINITY);
+    setIsChatModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Kundli Maker Guruji</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          Kundli Maker Guruji
+        </h2>
         <p className="text-muted-foreground">
-          Generate your detailed birth chart and get personalized astrological readings.
+          Generate your detailed birth chart and get personalized astrological
+          readings.
         </p>
       </div>
 
@@ -108,11 +188,17 @@ export default function KundliPage() {
           <Card>
             <CardHeader>
               <CardTitle>Enter Your Birth Details</CardTitle>
-              <CardDescription>Provide accurate birth information for precise astrological readings.</CardDescription>
+              <CardDescription>
+                Provide accurate birth information for precise astrological
+                readings.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
                     name="name"
@@ -120,7 +206,10 @@ export default function KundliPage() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter your full name" {...field} />
+                          <Input
+                            placeholder="Enter your full name"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -148,7 +237,9 @@ export default function KundliPage() {
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
-                        <FormDescription>Enter time in 24-hour format if known.</FormDescription>
+                        <FormDescription>
+                          Enter time in 24-hour format if known.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -160,7 +251,10 @@ export default function KundliPage() {
                       <FormItem>
                         <FormLabel>Place of Birth</FormLabel>
                         <FormControl>
-                          <Input placeholder="City, State, Country" {...field} />
+                          <Input
+                            placeholder="City, State, Country"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -172,7 +266,10 @@ export default function KundliPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Gender</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select gender" />
@@ -200,22 +297,29 @@ export default function KundliPage() {
           <Card>
             <CardHeader>
               <CardTitle>Your Kundli Chart</CardTitle>
-              <CardDescription>Based on your birth details, here is your personalized Kundli chart.</CardDescription>
+              <CardDescription>
+                Based on your birth details, here is your personalized Kundli
+                chart.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center space-y-6">
                 <div className="relative aspect-square w-full max-w-md border border-amber-200 rounded-lg p-4 bg-amber-50">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-muted-foreground">Your Kundli chart will appear here</p>
+                      <p className="text-muted-foreground">
+                        Your Kundli chart will appear here
+                      </p>
                     </div>
                   </div>
                 </div>
                 <div className="w-full space-y-4">
                   <h3 className="text-lg font-medium">Ask Kundli Guruji</h3>
                   <p className="text-sm text-muted-foreground">
-                    You have {3 - questionsAsked} free questions remaining. Ask about your birth chart, planetary
-                    positions, or get personalized astrological guidance.
+                    {isPremium ||
+                    questionsRemaining === Number.POSITIVE_INFINITY
+                      ? "You have unlimited questions. Ask about your birth chart, planetary positions, or get personalized astrological guidance."
+                      : `You have ${questionsRemaining} free questions remaining. Ask about your birth chart, planetary positions, or get personalized astrological guidance.`}
                   </p>
                   <Button onClick={handleAskQuestion} className="w-full">
                     Ask a Question
@@ -232,6 +336,7 @@ export default function KundliPage() {
         onOpenChange={setIsChatModalOpen}
         onSubmit={handleQuestionSubmitted}
         moduleTitle="Kundli Maker Guruji"
+        moduleId="kundli"
       />
 
       <PaymentModal
@@ -239,7 +344,8 @@ export default function KundliPage() {
         onOpenChange={setIsPaymentModalOpen}
         onSuccess={handlePaymentSuccess}
         moduleTitle="Kundli Maker Guruji"
+        moduleId="kundli"
       />
     </div>
-  )
+  );
 }

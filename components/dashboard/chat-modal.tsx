@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,60 +9,82 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Send } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: () => void
-  moduleTitle: string
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: () => void;
+  moduleTitle: string;
+  moduleId: string;
 }
 
-export function ChatModal({ open, onOpenChange, onSubmit, moduleTitle }: ChatModalProps) {
-  const [question, setQuestion] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [response, setResponse] = useState("")
+export function ChatModal({
+  open,
+  onOpenChange,
+  onSubmit,
+  moduleTitle,
+  moduleId,
+}: ChatModalProps) {
+  const { toast } = useToast();
+  const [question, setQuestion] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState("");
 
   const handleSubmit = async () => {
-    if (!question.trim()) return
+    if (!question.trim()) return;
 
-    setIsLoading(true)
-    setResponse("")
+    setIsLoading(true);
+    setResponse("");
 
     try {
-      // In a real app, you would call your backend API here
-      // const response = await fetch('/api/ask', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ module: moduleTitle, question }),
-      // });
-      // const data = await response.json();
+      const response = await fetch(`/api/astrology/${moduleId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const data = await response.json();
 
-      // Simulate response
-      setResponse(
-        "Based on your birth chart, I can see that Jupiter is well-positioned in your horoscope, which indicates good fortune and wisdom. This placement suggests that you have a natural ability to learn and grow from your experiences. The current planetary transits are favorable for your personal development and spiritual growth.",
-      )
-    } catch (error) {
-      console.error("Error asking question:", error)
-      setResponse("Sorry, there was an error processing your question. Please try again.")
+      if (!response.ok) {
+        if (data.paymentRequired) {
+          toast({
+            variant: "destructive",
+            title: "No questions remaining",
+            description: "Please upgrade to continue asking questions.",
+          });
+          onOpenChange(false);
+          return;
+        }
+        throw new Error(data.error || "Failed to process question");
+      }
+
+      setResponse(data.response);
+    } catch (error: any) {
+      console.error("Error asking question:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error.message ||
+          "Sorry, there was an error processing your question. Please try again.",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
     if (response) {
-      onSubmit()
+      onSubmit();
     }
-    setQuestion("")
-    setResponse("")
-    onOpenChange(false)
-  }
+    setQuestion("");
+    setResponse("");
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,7 +92,8 @@ export function ChatModal({ open, onOpenChange, onSubmit, moduleTitle }: ChatMod
         <DialogHeader>
           <DialogTitle>{moduleTitle}</DialogTitle>
           <DialogDescription>
-            Ask your question about your astrological chart or seek guidance on specific aspects of your life.
+            Ask your question about your astrological chart or seek guidance on
+            specific aspects of your life.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -86,7 +109,9 @@ export function ChatModal({ open, onOpenChange, onSubmit, moduleTitle }: ChatMod
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-              <span className="ml-2 text-sm text-muted-foreground">Consulting the stars...</span>
+              <span className="ml-2 text-sm text-muted-foreground">
+                Consulting the stars...
+              </span>
             </div>
           )}
 
@@ -103,7 +128,10 @@ export function ChatModal({ open, onOpenChange, onSubmit, moduleTitle }: ChatMod
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={!question.trim() || isLoading}>
+              <Button
+                onClick={handleSubmit}
+                disabled={!question.trim() || isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -123,5 +151,5 @@ export function ChatModal({ open, onOpenChange, onSubmit, moduleTitle }: ChatMod
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
