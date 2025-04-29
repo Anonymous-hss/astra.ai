@@ -1,7 +1,7 @@
-import { OpenAI } from "openai";
+import OpenAI from "openai";
 import { getCachedData, cacheData } from "@/lib/redis";
 
-// Initialize OpenAI client
+// Initialize OpenAI client with latest SDK
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -77,7 +77,7 @@ export async function generateAstrologyResponse(
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         {

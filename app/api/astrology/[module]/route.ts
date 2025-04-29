@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { moduleQuestions, chats, subscriptions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { generateAstrologyResponse } from "@/lib/ai";
 
@@ -41,10 +39,9 @@ export async function POST(
     }
 
     // Check if user has a premium subscription
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, user.id));
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
 
     const isPremium =
       subscription &&
@@ -52,15 +49,14 @@ export async function POST(
 
     // If not premium, check if user has questions remaining
     if (!isPremium) {
-      const [moduleQuestion] = await db
-        .select()
-        .from(moduleQuestions)
-        .where(
-          and(
-            eq(moduleQuestions.userId, user.id),
-            eq(moduleQuestions.module, module)
-          )
-        );
+      const moduleQuestion = await prisma.moduleQuestion.findUnique({
+        where: {
+          userId_module: {
+            userId: user.id,
+            module,
+          },
+        },
+      });
 
       if (!moduleQuestion || moduleQuestion.questionsRemaining <= 0) {
         return NextResponse.json(
@@ -72,19 +68,18 @@ export async function POST(
         );
       }
 
-      // Decrement questions remaining
-      await db
-        .update(moduleQuestions)
-        .set({
-          questionsRemaining: moduleQuestion.questionsRemaining - 1,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(moduleQuestions.userId, user.id),
-            eq(moduleQuestions.module, module)
-          )
-        );
+      // Decrement questions remaining using a transaction
+      await prisma.moduleQuestion.update({
+        where: {
+          userId_module: {
+            userId: user.id,
+            module,
+          },
+        },
+        data: {
+          questionsRemaining: { decrement: 1 },
+        },
+      });
     }
 
     // Generate AI response
@@ -103,30 +98,31 @@ export async function POST(
     );
 
     // Save chat
-    await db.insert(chats).values({
-      userId: user.id,
-      module,
-      question,
-      answer: aiResponse,
+    await prisma.chat.create({
+      data: {
+        userId: user.id,
+        module,
+        question,
+        answer: aiResponse,
+      },
     });
 
     // Get updated questions remaining
-    const [updatedModuleQuestion] = await db
-      .select()
-      .from(moduleQuestions)
-      .where(
-        and(
-          eq(moduleQuestions.userId, user.id),
-          eq(moduleQuestions.module, module)
-        )
-      );
+    const updatedModuleQuestion = await prisma.moduleQuestion.findUnique({
+      where: {
+        userId_module: {
+          userId: user.id,
+          module,
+        },
+      },
+    });
 
     return NextResponse.json({
       success: true,
       response: aiResponse,
       questionsRemaining: isPremium
         ? "unlimited"
-        : updatedModuleQuestion.questionsRemaining,
+        : updatedModuleQuestion?.questionsRemaining,
     });
   } catch (error) {
     console.error("Error processing astrology question:", error);

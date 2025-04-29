@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { chats } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
@@ -13,11 +11,10 @@ export async function GET() {
     }
 
     // Get user's chat history
-    const chatHistory = await db
-      .select()
-      .from(chats)
-      .where(eq(chats.userId, user.id))
-      .orderBy(desc(chats.createdAt));
+    const chatHistory = await prisma.chat.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
 
     return NextResponse.json({ chats: chatHistory });
   } catch (error) {

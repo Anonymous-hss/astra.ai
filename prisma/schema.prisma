@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For Neon serverless driver
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String?
+  birthDate    String?
+  birthTime    String?
+  birthPlace   String?
+  gender       String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  chats        Chat[]
+  payments     Payment[]
+  subscription Subscription?
+  modules      ModuleQuestion[]
+}
+
+model ModuleQuestion {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  module            String   // "kundli", "relationship", "career", "compatibility", "business", "gemstone"
+  questionsRemaining Int     @default(3)
+  isPremium         Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+}
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  module    String
+  question  String   @db.Text
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  module         String
+  amount         Int
+  currency       String   @default("INR")
+  status         String
+  paymentId      String?
+  paymentDetails Json?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  plan      String    @default("free") // "free", "premium", "annual"
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

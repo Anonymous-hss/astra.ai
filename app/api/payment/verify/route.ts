@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { db } from "@/lib/db";
-import { payments, moduleQuestions, subscriptions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -30,25 +28,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update payment record
-    const [payment] = await db
-      .update(payments)
-      .set({
-        status: "captured",
-        paymentId: razorpay_payment_id,
-        paymentDetails: {
-          razorpay_payment_id,
-          razorpay_order_id,
-          razorpay_signature,
-        },
-      })
-      .where(
-        and(
-          eq(payments.paymentId, razorpay_order_id),
-          eq(payments.userId, user.id)
-        )
-      )
-      .returning();
+    // Find and update payment record
+    const payment = await prisma.payment.findFirst({
+      where: {
+        userId: user.id,
+        paymentId: razorpay_order_id,
+      },
+    });
 
     if (!payment) {
       return NextResponse.json(
@@ -57,43 +43,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (payment.module === "all") {
-      // Update subscription status
-      const plan = payment.amount === 4999 ? "annual" : "premium";
-      const endDate = new Date();
+    // Update payment status
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "captured",
+        paymentId: razorpay_payment_id,
+        paymentDetails: {
+          razorpay_payment_id,
+          razorpay_order_id,
+          razorpay_signature,
+        },
+      },
+    });
 
-      if (plan === "annual") {
-        endDate.setFullYear(endDate.getFullYear() + 1);
+    // Use a transaction for updating subscription or module questions
+    await prisma.$transaction(async (tx) => {
+      if (payment.module === "all") {
+        // Update subscription status
+        const plan = payment.amount === 4999 ? "annual" : "premium";
+        const endDate = new Date();
+
+        if (plan === "annual") {
+          endDate.setFullYear(endDate.getFullYear() + 1);
+        } else {
+          endDate.setMonth(endDate.getMonth() + 1);
+        }
+
+        await tx.subscription.upsert({
+          where: { userId: user.id },
+          update: {
+            plan,
+            startDate: new Date(),
+            endDate,
+            isActive: true,
+          },
+          create: {
+            userId: user.id,
+            plan,
+            startDate: new Date(),
+            endDate,
+            isActive: true,
+          },
+        });
       } else {
-        endDate.setMonth(endDate.getMonth() + 1);
+        // Update specific module premium status
+        await tx.moduleQuestion.update({
+          where: {
+            userId_module: {
+              userId: user.id,
+              module: payment.module,
+            },
+          },
+          data: {
+            questionsRemaining: 999, // Effectively unlimited
+            isPremium: true,
+          },
+        });
       }
-
-      await db
-        .update(subscriptions)
-        .set({
-          plan,
-          startDate: new Date(),
-          endDate,
-          isActive: true,
-          updatedAt: new Date(),
-        })
-        .where(eq(subscriptions.userId, user.id));
-    } else {
-      // Reset questions for specific module
-      await db
-        .update(moduleQuestions)
-        .set({
-          questionsRemaining: 999, // Effectively unlimited
-          isPremium: true,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(moduleQuestions.userId, user.id),
-            eq(moduleQuestions.module, payment.module)
-          )
-        );
-    }
+    });
 
     return NextResponse.json({
       success: true,

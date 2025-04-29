@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { payments } from "@/lib/db/schema";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import Razorpay from "razorpay";
 
@@ -51,13 +50,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Save payment record
-    await db.insert(payments).values({
-      userId: user.id,
-      module,
-      amount,
-      status: "created",
-      paymentId: order.id,
-      paymentDetails: order,
+    await prisma.payment.create({
+      data: {
+        userId: user.id,
+        module,
+        amount,
+        status: "created",
+        paymentId: order.id,
+        paymentDetails: order,
+      },
     });
 
     return NextResponse.json({

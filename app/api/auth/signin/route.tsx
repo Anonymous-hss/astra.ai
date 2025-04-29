@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { comparePassword, createSession } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -17,9 +15,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
-    if (!user) {
+    if (!user || !user.password) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const passwordMatch = await comparePassword(password, user.password!);
+    const passwordMatch = await comparePassword(password, user.password);
 
     if (!passwordMatch) {
       return NextResponse.json(

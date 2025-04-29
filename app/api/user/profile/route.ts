@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
@@ -34,23 +32,29 @@ export async function PUT(request: NextRequest) {
       await request.json();
 
     // Update user
-    const [updatedUser] = await db
-      .update(users)
-      .set({
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
         name: name || user.name,
         birthDate: birthDate || user.birthDate,
         birthTime: birthTime || user.birthTime,
         birthPlace: birthPlace || user.birthPlace,
         gender: gender || user.gender,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id))
-      .returning();
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        birthDate: true,
+        birthTime: true,
+        birthPlace: true,
+        gender: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    // Don't return the password
-    const { password, ...userWithoutPassword } = updatedUser;
-
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({ user: updatedUser });
   } catch (error) {
     console.error("Error updating user profile:", error);
     return NextResponse.json(

@@ -1,57 +1,47 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { moduleQuestions, subscriptions } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/auth";
+import { comparePassword, createSession } from "@/lib/auth";
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { email, password } = await request.json();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Validate input
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
-    // Get user's subscription
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, user.id));
+    // Find user
+    const [user] = await db.select().from(users).where(eq(users.email, email));
 
-    const isPremium =
-      subscription &&
-      (subscription.plan === "premium" || subscription.plan === "annual");
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
 
-    // Get questions remaining for each module
-    const questions = await db
-      .select()
-      .from(moduleQuestions)
-      .where(eq(moduleQuestions.userId, user.id));
+    // Verify password
+    const passwordMatch = await comparePassword(password, user.password!);
 
-    // Format response
-    const moduleStatus = questions.reduce((acc, question) => {
-      acc[question.module] = {
-        questionsRemaining: isPremium
-          ? "unlimited"
-          : question.questionsRemaining,
-        isPremium: isPremium || question.isPremium,
-      };
-      return acc;
-    }, {} as Record<string, { questionsRemaining: number | "unlimited"; isPremium: boolean }>);
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
 
-    return NextResponse.json({
-      subscription: {
-        plan: subscription?.plan || "free",
-        isActive: subscription?.isActive || false,
-        endDate: subscription?.endDate,
-      },
-      modules: moduleStatus,
-    });
+    // Create session
+    await createSession(user.id);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error fetching questions status:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch questions status" },
-      { status: 500 }
-    );
+    console.error("Error signing in:", error);
+    return NextResponse.json({ error: "Failed to sign in" }, { status: 500 });
   }
 }

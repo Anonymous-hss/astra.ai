@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { moduleQuestions, subscriptions } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
@@ -13,20 +11,18 @@ export async function GET() {
     }
 
     // Get user's subscription
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, user.id));
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
 
     const isPremium =
       subscription &&
       (subscription.plan === "premium" || subscription.plan === "annual");
 
     // Get questions remaining for each module
-    const questions = await db
-      .select()
-      .from(moduleQuestions)
-      .where(eq(moduleQuestions.userId, user.id));
+    const questions = await prisma.moduleQuestion.findMany({
+      where: { userId: user.id },
+    });
 
     // Format response
     const moduleStatus = questions.reduce((acc, question) => {

@@ -1,7 +1,7 @@
 import { Redis } from "@upstash/redis";
 
 // Initialize Redis client with connection details from environment variables
-export const redis = new Redis({
+const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
@@ -43,3 +43,5 @@ export async function getCachedData<T>(key: string): Promise<T | null> {
 export async function invalidateCache(key: string) {
   await redis.del(key);
 }
+
+export { redis };

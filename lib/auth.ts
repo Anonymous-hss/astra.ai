@@ -1,37 +1,33 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import prisma from "@/lib/prisma";
 import { getSession, setSession, deleteSession } from "@/lib/redis";
 import { v4 as uuidv4 } from "uuid";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
-// Session cookie name
 const SESSION_COOKIE_NAME = "jyotish_session";
 
-// Create a new session for a user
 export async function createSession(userId: number) {
   const sessionId = uuidv4();
   await setSession(userId, sessionId);
 
-  // Set session cookie
-  cookies().set({
+  const cookieStore = await cookies();
+  cookieStore.set({
     name: SESSION_COOKIE_NAME,
     value: sessionId,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+    maxAge: 60 * 60 * 24 * 7,
   });
 
   return sessionId;
 }
 
-// Get the current user from the session
 export async function getCurrentUser() {
-  const sessionId = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!sessionId) {
     return null;
@@ -43,40 +39,43 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      birthDate: true,
+      birthTime: true,
+      birthPlace: true,
+      gender: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 
-  if (!user) {
-    return null;
-  }
-
-  // Don't return the password
-  const { password, ...userWithoutPassword } = user;
-
-  return userWithoutPassword;
+  return user;
 }
 
-// Sign out the current user
 export async function signOut() {
-  const sessionId = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (sessionId) {
     await deleteSession(sessionId);
   }
 
-  cookies().delete(SESSION_COOKIE_NAME);
+  cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
-// Hash a password
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, 12);
 }
 
-// Compare a password with a hash
 export async function comparePassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-// Authentication middleware
 export async function authMiddleware(request: NextRequest) {
   const sessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
@@ -90,5 +89,5 @@ export async function authMiddleware(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return null; // No error, proceed
+  return null;
 }
