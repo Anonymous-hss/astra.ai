@@ -11,8 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { ParticleFlow } from "@/components/ui/cosmic-elements";
 
 interface ChatModalProps {
   open: boolean;
@@ -88,66 +90,139 @@ export function ChatModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{moduleTitle}</DialogTitle>
-          <DialogDescription>
-            Ask your question about your astrological chart or seek guidance on
-            specific aspects of your life.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          {!response && (
-            <Textarea
-              placeholder="Type your question here..."
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="min-h-[100px]"
-            />
-          )}
-
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-              <span className="ml-2 text-sm text-muted-foreground">
-                Consulting the stars...
-              </span>
-            </div>
-          )}
-
-          {response && (
-            <div className="rounded-lg border bg-card p-4">
-              <h4 className="font-medium mb-2">Response:</h4>
-              <p className="text-sm text-muted-foreground">{response}</p>
-            </div>
-          )}
+      <DialogContent className="sm:max-w-[500px] cosmic-glass">
+        <div className="absolute inset-0 overflow-hidden rounded-lg">
+          <ParticleFlow className="opacity-20" />
         </div>
-        <DialogFooter>
-          {!response ? (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!question.trim() || isLoading}
+        <DialogHeader className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <DialogTitle className="font-cosmic gradient-text flex items-center">
+              <Sparkles className="h-5 w-5 mr-2 text-purple-400 animate-twinkling" />
+              {moduleTitle}
+            </DialogTitle>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <DialogDescription className="text-slate-300">
+              Ask your question about your astrological chart or seek guidance
+              on specific aspects of your life.
+            </DialogDescription>
+          </motion.div>
+        </DialogHeader>
+        <div className="space-y-4 relative z-10">
+          <AnimatePresence mode="wait">
+            {!response && !isLoading && (
+              <motion.div
+                key="question-input"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit
-                  </>
-                )}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleClose}>Close</Button>
-          )}
+                <Textarea
+                  placeholder="Type your question here..."
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  className="cosmic-input text-slate-200 min-h-[100px]"
+                />
+              </motion.div>
+            )}
+
+            {isLoading && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center justify-center py-8"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-purple-600/20 animate-ping"></div>
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-400 relative z-10" />
+                </div>
+                <span className="ml-2 text-sm text-slate-300 mt-4">
+                  Consulting the cosmic forces...
+                </span>
+              </motion.div>
+            )}
+
+            {response && (
+              <motion.div
+                key="response"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="rounded-lg border border-indigo-800/30 bg-indigo-950/30 p-4"
+              >
+                <div className="flex items-center mb-2">
+                  <Sparkles className="h-4 w-4 mr-2 text-purple-400 animate-twinkling" />
+                  <h4 className="font-cosmic gradient-text">
+                    Celestial Guidance:
+                  </h4>
+                </div>
+                <p className="text-sm text-slate-300">{response}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <DialogFooter className="relative z-10">
+          <AnimatePresence mode="wait">
+            {!response ? (
+              <motion.div
+                key="question-actions"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex gap-2 w-full justify-end"
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="border-purple-900/30 text-slate-300 hover:bg-purple-900/20 hover:text-purple-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!question.trim() || isLoading}
+                  className="cosmic-button"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Submit
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="response-actions"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="w-full"
+              >
+                <Button onClick={handleClose} className="cosmic-button w-full">
+                  Close
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </DialogFooter>
       </DialogContent>
     </Dialog>
