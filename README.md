@@ -233,4 +233,4 @@ This project is licensed under the **MIT License** – see the [LICENSE](./LICEN
 
 ---
 
-> Built with ❤️ and cosmic energy by [Your Name]
+> Built with ❤️ and cosmic energy by Harshal Sawatkar
