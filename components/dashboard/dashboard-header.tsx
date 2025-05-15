@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,101 +13,89 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bell, User } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
-import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bell, Menu, X } from "lucide-react";
 import { JyotishGuruLogo } from "@/components/ui/cosmic-elements";
 
 export function DashboardHeader() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   return (
-    <motion.header
-      className="sticky top-0 z-50 w-full backdrop-blur-md bg-indigo-950/40 border-b border-white/10"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container flex h-16 items-center">
-        <div className="flex items-center gap-2 md:gap-4">
-          <SidebarTrigger className="md:hidden" />
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <JyotishGuruLogo className="hidden md:block" />
-            <motion.span
-              className="font-cosmic text-xl gradient-text hidden md:inline-block"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-2 md:gap-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <JyotishGuruLogo size={32} />
+            <span className="text-xl font-bold font-cosmic hidden sm:inline-block gradient-text">
               Jyotish Guru
-            </motion.span>
+            </span>
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center space-x-2">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative text-purple-300 hover:text-purple-200 hover:bg-purple-900/20"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-cosmic-primary-500 rounded-full"></span>
+            <span className="sr-only">Notifications</span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src="/placeholder.svg?height=32&width=32"
+                    alt="User"
+                  />
+                  <AvatarFallback className="bg-cosmic-primary-900 text-cosmic-primary-200">
+                    JG
+                  </AvatarFallback>
+                </Avatar>
               </Button>
-            </motion.div>
-            <ModeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    variant="ghost"
-                    className="relative h-8 w-8 rounded-full text-purple-300 hover:text-purple-200 hover:bg-purple-900/20 cosmic-ring"
-                  >
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">User menu</span>
-                  </Button>
-                </motion.div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="cosmic-glass">
-                <DropdownMenuLabel className="text-slate-300">
-                  My Account
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem
-                  asChild
-                  className="text-slate-200 focus:bg-purple-900/30 focus:text-white"
-                >
-                  <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  asChild
-                  className="text-slate-200 focus:bg-purple-900/30 focus:text-white"
-                >
-                  <Link href="/dashboard/settings">Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  asChild
-                  className="text-slate-200 focus:bg-purple-900/30 focus:text-white"
-                >
-                  <Link href="/dashboard/subscription">Subscription</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem
-                  asChild
-                  className="text-slate-200 focus:bg-purple-900/30 focus:text-white"
-                >
-                  <Link href="/">Sign out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">User</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    user@example.com
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings">Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/subscription">Subscription</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/support">Support</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/auth/signout">Log out</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

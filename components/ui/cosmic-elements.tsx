@@ -3,37 +3,23 @@
 import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
-// Star field component with parallax effect
+// Update the color references to use our new minimal color scheme
 export function CosmicBackground() {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/80 via-[#0c0026] to-black"></div>
-      <div className="stars-container absolute inset-0">
-        {[...Array(100)].map((_, i) => (
-          <div
-            key={i}
-            className="star"
-            style={{
-              width: `${Math.random() * 3 + 1}px`,
-              height: `${Math.random() * 3 + 1}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-              opacity: Math.random() * 0.8 + 0.2,
-            }}
-          />
-        ))}
+      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-dark-200/80 via-cosmic-dark-300 to-cosmic-dark-500 dark:from-cosmic-dark-200/80 dark:via-cosmic-dark-300 dark:to-cosmic-dark-500 light:from-slate-100 light:via-slate-50 light:to-white"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-[url('/stars-bg.svg')] bg-repeat opacity-30 dark:opacity-30 light:opacity-10 z-0"></div>
+
+      <div className="nebula-container absolute inset-0 opacity-20 dark:opacity-20 light:opacity-10">
+        <div className="nebula-1 absolute top-[10%] left-[20%] w-[40vw] h-[40vh] rounded-full bg-gradient-to-tr from-cosmic-primary-900/30 via-cosmic-primary-700/20 to-transparent blur-3xl"></div>
+        <div className="nebula-2 absolute bottom-[20%] right-[10%] w-[35vw] h-[35vh] rounded-full bg-gradient-to-bl from-cosmic-secondary-900/30 via-cosmic-secondary-700/20 to-transparent blur-3xl"></div>
       </div>
-      <div className="nebula-container absolute inset-0 opacity-20">
-        <div className="nebula-1 absolute top-[10%] left-[20%] w-[40vw] h-[40vh] rounded-full bg-gradient-to-tr from-purple-900/30 via-indigo-600/20 to-transparent blur-3xl"></div>
-        <div className="nebula-2 absolute bottom-[20%] right-[10%] w-[35vw] h-[35vh] rounded-full bg-gradient-to-bl from-indigo-900/30 via-purple-600/20 to-transparent blur-3xl"></div>
-      </div>
-      <div className="grid-overlay absolute inset-0 bg-[url('/grid.png')] bg-repeat opacity-10"></div>
+      <div className="grid-overlay absolute inset-0 bg-[url('/grid.png')] bg-repeat opacity-10 dark:opacity-10 light:opacity-5"></div>
     </div>
   );
 }
 
-// Animated constellation component
+// Update the color references in the Constellation component
 export function Constellation({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -147,7 +133,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="30"
           x2="70"
           y2="40"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -158,7 +144,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="40"
           x2="100"
           y2="20"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -169,7 +155,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="20"
           x2="130"
           y2="50"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -180,7 +166,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="50"
           x2="160"
           y2="30"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -191,7 +177,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="40"
           x2="60"
           y2="70"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -202,7 +188,7 @@ export function Constellation({ className = "" }: { className?: string }) {
           y1="50"
           x2="120"
           y2="80"
-          stroke="#a78bfa"
+          stroke="#a855f7"
           strokeWidth="0.3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
@@ -213,26 +199,28 @@ export function Constellation({ className = "" }: { className?: string }) {
   );
 }
 
-// Animated cosmic orb component
+// Update the CosmicOrb component to use our new color scheme
 export function CosmicOrb({
   className = "",
   size = 200,
-  color = "purple",
+  color = "primary",
 }: {
   className?: string;
   size?: number;
   color?: string;
 }) {
   const colorMap = {
-    purple: "from-purple-600/30 via-indigo-500/20 to-transparent",
-    blue: "from-blue-600/30 via-indigo-500/20 to-transparent",
-    pink: "from-pink-600/30 via-purple-500/20 to-transparent",
-    teal: "from-teal-600/30 via-blue-500/20 to-transparent",
-    amber: "from-amber-600/30 via-orange-500/20 to-transparent",
+    primary:
+      "from-cosmic-primary-600/30 via-cosmic-primary-500/20 to-transparent",
+    secondary:
+      "from-cosmic-secondary-600/30 via-cosmic-secondary-500/20 to-transparent",
+    pink: "from-pink-600/30 via-pink-500/20 to-transparent",
+    blue: "from-blue-600/30 via-blue-500/20 to-transparent",
+    amber: "from-amber-600/30 via-amber-500/20 to-transparent",
   };
 
   const gradientClass =
-    colorMap[color as keyof typeof colorMap] || colorMap.purple;
+    colorMap[color as keyof typeof colorMap] || colorMap.primary;
 
   return (
     <div
@@ -268,26 +256,26 @@ export function CosmicOrb({
   );
 }
 
-// Animated cosmic ring component
+// Update the CosmicRing component to use our new color scheme
 export function CosmicRing({
   className = "",
   size = 200,
-  color = "purple",
+  color = "primary",
 }: {
   className?: string;
   size?: number;
   color?: string;
 }) {
   const colorMap = {
-    purple: "border-purple-500/30",
-    blue: "border-blue-500/30",
+    primary: "border-cosmic-primary-500/30",
+    secondary: "border-cosmic-secondary-500/30",
     pink: "border-pink-500/30",
-    teal: "border-teal-500/30",
+    blue: "border-blue-500/30",
     amber: "border-amber-500/30",
   };
 
   const borderClass =
-    colorMap[color as keyof typeof colorMap] || colorMap.purple;
+    colorMap[color as keyof typeof colorMap] || colorMap.primary;
 
   return (
     <div
@@ -331,12 +319,12 @@ export function CosmicRing({
   );
 }
 
-// Animated cosmic beam component
+// Update the CosmicBeam component to use our new color scheme
 export function CosmicBeam({ className = "" }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/30 to-purple-600/0"
+        className="absolute inset-0 bg-gradient-to-r from-cosmic-primary-600/0 via-cosmic-primary-600/30 to-cosmic-primary-600/0"
         animate={{
           x: ["-100%", "100%"],
         }}
@@ -573,7 +561,7 @@ export const CosmicCard = React.forwardRef<
 });
 CosmicCard.displayName = "CosmicCard";
 
-// Logo component
+// Update the JyotishGuruLogo component to use our new color scheme
 export function JyotishGuruLogo({
   className = "",
   size = 40,

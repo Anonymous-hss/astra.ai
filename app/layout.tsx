@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cinzel, Raleway } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -23,6 +23,12 @@ export const metadata: Metadata = {
   description: "Get personalized astrological guidance powered by AI",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,12 +43,7 @@ export default function RootLayout({
           fontBody.variable
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="min-h-screen text-slate-100 relative">
             <CosmicBackground />
             <div className="relative z-10">{children}</div>

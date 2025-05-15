@@ -1,33 +1,26 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import {
-  Star,
+  BarChart3,
   Heart,
   Briefcase,
   Users,
-  Building,
   Gem,
-  Home,
-  Settings,
   User,
+  Settings,
   CreditCard,
   HelpCircle,
-  LogOut,
+  Star,
+  X,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { useMobile } from "@/hooks/use-mobile";
 import {
-  JyotishGuruLogo,
   KundliIcon,
   RelationshipIcon,
   CareerIcon,
@@ -36,202 +29,181 @@ import {
   GemstoneIcon,
 } from "@/components/ui/cosmic-elements";
 
-export function DashboardSidebar() {
-  const pathname = usePathname();
+interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-  const modules = [
+export function DashboardSidebar({ className, ...props }: SidebarNavProps) {
+  const pathname = usePathname();
+  const isMobile = useMobile();
+  const [isOpen, setIsOpen] = useState(!isMobile);
+
+  useEffect(() => {
+    setIsOpen(!isMobile);
+  }, [isMobile]);
+
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const mainItems = [
     {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: Home,
-      customIcon: null,
-    },
-    {
-      title: "Kundli Maker",
+      name: "Kundli Maker",
       href: "/dashboard/kundli",
       icon: Star,
       customIcon: KundliIcon,
     },
     {
-      title: "Relationship",
+      name: "Relationship",
       href: "/dashboard/relationship",
       icon: Heart,
       customIcon: RelationshipIcon,
     },
     {
-      title: "Career",
+      name: "Career",
       href: "/dashboard/career",
-      icon: Briefcase,
+      icon: BarChart3,
       customIcon: CareerIcon,
     },
     {
-      title: "Compatibility",
+      name: "Compatibility",
       href: "/dashboard/compatibility",
       icon: Users,
       customIcon: CompatibilityIcon,
     },
     {
-      title: "Business",
+      name: "Business",
       href: "/dashboard/business",
-      icon: Building,
+      icon: Briefcase,
       customIcon: BusinessIcon,
     },
     {
-      title: "Gemstone",
+      name: "Gemstone",
       href: "/dashboard/gemstone",
       icon: Gem,
       customIcon: GemstoneIcon,
     },
   ];
 
-  const accountLinks = [
+  const accountItems = [
     {
-      title: "Profile",
+      name: "Profile",
       href: "/dashboard/profile",
       icon: User,
     },
     {
-      title: "Settings",
+      name: "Settings",
       href: "/dashboard/settings",
       icon: Settings,
     },
     {
-      title: "Subscription",
+      name: "Subscription",
       href: "/dashboard/subscription",
       icon: CreditCard,
     },
     {
-      title: "Help & Support",
+      name: "Support",
       href: "/dashboard/support",
       icon: HelpCircle,
     },
   ];
 
-  return (
-    <Sidebar className="bg-indigo-950/60 backdrop-blur-md border-r border-white/10">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-4">
-          <JyotishGuruLogo />
-          <motion.span
-            className="text-xl font-cosmic gradient-text"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            Jyotish Guru
-          </motion.span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu>
-          {modules.map((module, index) => (
-            <SidebarMenuItem key={module.href}>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === module.href}
-                  tooltip={module.title}
-                  className={`text-slate-300 hover:text-purple-300 hover:bg-purple-900/20 ${
-                    pathname === module.href
-                      ? "bg-purple-900/30 text-purple-300"
-                      : ""
-                  }`}
-                >
-                  <Link href={module.href}>
-                    {module.customIcon ? (
-                      <module.customIcon className="w-5 h-5" />
-                    ) : (
-                      <module.icon
-                        className={
-                          pathname === module.href ? "text-purple-300" : ""
-                        }
-                      />
-                    )}
-                    <span>{module.title}</span>
-                    {pathname === module.href && (
-                      <motion.div
-                        className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-r"
-                        layoutId="sidebar-active-indicator"
-                      />
-                    )}
-                  </Link>
-                </SidebarMenuButton>
-              </motion.div>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+  if (!isOpen && isMobile) {
+    return null;
+  }
 
-        <div className="mt-6 px-3 py-2">
-          <div className="cosmic-divider" />
-          <h3 className="mb-2 px-4 text-xs font-medium text-slate-400">
-            Account
-          </h3>
-          <SidebarMenu>
-            {accountLinks.map((link, index) => (
-              <SidebarMenuItem key={link.href}>
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
+  return (
+    <div
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-sidebar pt-16 transition-transform duration-300 md:relative md:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+        className
+      )}
+      {...props}
+    >
+      {isMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 top-2"
+          onClick={toggleSidebar}
+        >
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close sidebar</span>
+        </Button>
+      )}
+      <ScrollArea className="flex-1 px-3 py-4">
+        <div className="space-y-6">
+          <div>
+            <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+              Modules
+            </h3>
+            <div className="space-y-1">
+              {mainItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant="ghost"
+                  asChild
+                  className={cn(
+                    "w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    pathname === item.href
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/80"
+                  )}
                 >
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === link.href}
-                    tooltip={link.title}
-                    className={`text-slate-300 hover:text-purple-300 hover:bg-purple-900/20 ${
-                      pathname === link.href
-                        ? "bg-purple-900/30 text-purple-300"
-                        : ""
-                    }`}
-                  >
-                    <Link href={link.href}>
-                      <link.icon
-                        className={
-                          pathname === link.href ? "text-purple-300" : ""
-                        }
-                      />
-                      <span>{link.title}</span>
-                      {pathname === link.href && (
-                        <motion.div
-                          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-r"
-                          layoutId="sidebar-active-indicator"
-                        />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </motion.div>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+                  <Link href={item.href} className="flex items-center">
+                    {item.customIcon ? (
+                      <item.customIcon className="mr-2 h-5 w-5" />
+                    ) : (
+                      <item.icon className="mr-2 h-5 w-5" />
+                    )}
+                    {item.name}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+              Account
+            </h3>
+            <div className="space-y-1">
+              {accountItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant="ghost"
+                  asChild
+                  className={cn(
+                    "w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    pathname === item.href
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/80"
+                  )}
+                >
+                  <Link href={item.href}>
+                    <item.icon className="mr-2 h-5 w-5" />
+                    {item.name}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="cosmic-divider" />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.8 }}
-            >
-              <SidebarMenuButton
-                asChild
-                tooltip="Sign out"
-                className="text-slate-300 hover:text-purple-300 hover:bg-purple-900/20"
-              >
-                <Link href="/">
-                  <LogOut />
-                  <span>Sign out</span>
-                </Link>
-              </SidebarMenuButton>
-            </motion.div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+      </ScrollArea>
+      <div className="border-t p-4">
+        <div className="rounded-md bg-sidebar-accent/50 p-3">
+          <h4 className="mb-1 text-sm font-medium text-sidebar-foreground">
+            Upgrade to Premium
+          </h4>
+          <p className="text-xs text-sidebar-foreground/70">
+            Get unlimited readings and personalized insights.
+          </p>
+          <Button
+            asChild
+            className="mt-2 w-full bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+          >
+            <Link href="/dashboard/subscription">Upgrade Now</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
