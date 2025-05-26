@@ -1,4 +1,9 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export function FAQSection() {
   const faqs = [
@@ -19,7 +24,8 @@ export function FAQSection() {
     },
     {
       question: "Can I use the service on mobile devices?",
-      answer: "Yes, our platform is fully responsive and works on smartphones, tablets, and desktop computers.",
+      answer:
+        "Yes, our platform is fully responsive and works on smartphones, tablets, and desktop computers.",
     },
     {
       question: "How do I cancel my subscription?",
@@ -31,13 +37,15 @@ export function FAQSection() {
       answer:
         "Yes, we take privacy seriously. Your personal information is encrypted and securely stored. We do not share your data with third parties without your consent.",
     },
-  ]
+  ];
 
   return (
-    <section className="py-16 md:py-24 bg-amber-50">
+    <section className="py-16 md:py-24 bg-purple">
       <div className="container">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            Frequently Asked Questions
+          </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             Find answers to common questions about our astrological services.
           </p>
@@ -46,7 +54,9 @@ export function FAQSection() {
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                <AccordionTrigger className="text-left">
+                  {faq.question}
+                </AccordionTrigger>
                 <AccordionContent>{faq.answer}</AccordionContent>
               </AccordionItem>
             ))}
@@ -54,5 +64,5 @@ export function FAQSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

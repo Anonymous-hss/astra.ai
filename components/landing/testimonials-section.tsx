@@ -1,5 +1,5 @@
-import Image from "next/image"
-import { Star } from "lucide-react"
+import Image from "next/image";
+import { Star } from "lucide-react";
 
 export function TestimonialsSection() {
   const testimonials = [
@@ -24,20 +24,26 @@ export function TestimonialsSection() {
         "The relationship compatibility analysis was eye-opening. It helped me understand patterns in my relationship and provided guidance on how to improve communication.",
       avatar: "/placeholder.svg?height=100&width=100",
     },
-  ]
+  ];
 
   return (
-    <section className="py-16 md:py-24 bg-amber-50">
+    <section className="py-16 md:py-24 bg-purple">
       <div className="container">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">What Our Users Say</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            What Our Users Say
+          </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Discover how Jyotish Guru has helped people find clarity and guidance.
+            Discover how Jyotish Guru has helped people find clarity and
+            guidance.
           </p>
         </div>
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="rounded-lg border bg-card p-6 shadow-sm">
+            <div
+              key={index}
+              className="rounded-lg border bg-card p-6 shadow-sm"
+            >
               <div className="flex items-center gap-4 mb-4">
                 <Image
                   src={testimonial.avatar || "/placeholder.svg"}
@@ -48,12 +54,17 @@ export function TestimonialsSection() {
                 />
                 <div>
                   <h3 className="font-medium">{testimonial.name}</h3>
-                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {testimonial.role}
+                  </p>
                 </div>
               </div>
               <div className="flex mb-4">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
+                  <Star
+                    key={i}
+                    className="h-5 w-5 fill-amber-400 text-amber-400"
+                  />
                 ))}
               </div>
               <p className="text-muted-foreground">{testimonial.content}</p>
@@ -62,5 +73,5 @@ export function TestimonialsSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }
